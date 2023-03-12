@@ -1,0 +1,9 @@
+{ 
+    "simple": "/opt/bin/simple",
+    "timeout": 120,
+    "debug": false,
+    "ankiConnectHost": "192.168.0.90",
+    "ankiConnectPort": "8765",
+    "rm2fb": true,
+    "ghosting": 5
+}
