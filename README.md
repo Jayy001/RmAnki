@@ -1,5 +1,5 @@
 <p align="center">
-<img src="assets/demo.mp4">
+<img src="assets/demo.gif">
 
 # RmAnki
 
