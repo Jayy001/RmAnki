@@ -1,5 +1,3 @@
-<p align="center">
-
 # RmAnki
 
 AnkiWeb wrapper for the ReMarkable device.
@@ -13,20 +11,20 @@ AnkiWeb wrapper for the ReMarkable device.
 
 # How to build & run
 
-Based on https://developer.remarkable.com/documentation/qt_epaper (Please check this if you're on version 3.17)
+Based on [the offical developer documentation](https://developer.remarkable.com/documentation/qt_epaper) (please read if you're on version 3.17!)
 
-1. Download toolchain for your device 
+1. Download the [the toolchain](https://developer.remarkable.com/documentation/sdk) for your device 
 
 2. Source the toolchain 
 ```
 source <env_setup_file>
 ```
-1. Run the build command
+3. Run the build command
 ```
 cmake . -B build
 cmake --build build
 ```
-1. Transfer files to the reMarkable
+4. Transfer files to the reMarkable
 ```
 scp build/anki root@10.11.99.1:/home/root/anki
 ssh root@10.11.99.1
