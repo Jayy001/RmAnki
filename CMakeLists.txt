@@ -9,6 +9,6 @@ qt_add_executable(anki main.cpp ankiclient.cpp ankiclient.h)
 qt_add_qml_module(anki
     URI anki_app
     VERSION 1.0
-    QML_FILES main.qml)
+    QML_FILES Main.qml)
 
 target_link_libraries(anki PRIVATE Qt6::Quick Qt6::Network)

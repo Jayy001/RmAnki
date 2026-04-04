@@ -19,7 +19,7 @@ int main(int argc, char *argv[])
         &app,
         []() { QCoreApplication::exit(-1); },
         Qt::QueuedConnection);
-    engine.loadFromModule("anki_app", "main");
+    engine.loadFromModule("anki_app", "Main");
 
     return app.exec();
 }
