@@ -1,50 +1,49 @@
-name: Build reMarkable App
+name: Build and Release reMarkable App
 
-# Let's pray it works 
-# Triggers the workflow on push or pull request to the main branch
 on:
   push:
     branches: [ "main" ]
-  workflow_dispatch:
+
+# Explicitly grant the token permission to create releases
+permissions:
+  contents: write
 
 jobs:
-  build:
-    # Use standard Ubuntu runner which is compatible with the x86_64 toolchain
+  build-and-release:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Check out your repository code
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2. Install required system dependencies
       - name: Install dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y cmake wget xz-utils
 
-      # 3. Download and install the reMarkable toolchain
       - name: Setup reMarkable Toolchain
         run: |
           wget https://storage.googleapis.com/remarkable-codex-toolchain/3.24.2.0/ferrari/remarkable-production-image-5.4.107-ferrari-public-x86_64-toolchain.sh
           chmod +x remarkable-production-image-5.4.107-ferrari-public-x86_64-toolchain.sh
-          # The -y flag automatically confirms the installation directory prompt
           ./remarkable-production-image-5.4.107-ferrari-public-x86_64-toolchain.sh -y -d sdk
 
-      # 4. Source the environment and build the project
-      - name: Configure and Build
+      - name: Configure, Build, and Rename
         run: |
-          # Sourcing and building must happen in the same step so the exported 
-          # compiler variables (CC, CXX, etc.) are available to CMake.
           source sdk/environment-setup-cortexa53-crypto-remarkable-linux
           cmake . -B build
           cmake --build build
+          
+          mv build/anki build/anki_rmpp_24.2.0
 
-      # 5. Upload the compiled binary as a GitHub Artifact
-      - name: Upload Build Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: anki-remarkable-binary
-          path: build/anki
-          # If the binary might be missing on failure, this prevents the workflow from failing just for the upload
-          if-no-files-found: error
+      # Generate a timestamp (e.g., 2024-10-25_14-30-00) and save it to the environment variables
+      - name: Generate Timestamp
+        run: echo "TIMESTAMP=$(date +'%Y-%m-%d_%H-%M-%S')" >> $GITHUB_ENV
+
+      # Use the pre-installed GitHub CLI to create the release and upload the asset
+      - name: Create Release and Upload Asset
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${{ env.TIMESTAMP }}" build/anki_rmpp_24.2.0 \
+            --title "Build ${{ env.TIMESTAMP }}" \
+            --notes "Automated release triggered by push to main branch."
