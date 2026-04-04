@@ -1,18 +1,49 @@
 <p align="center">
-<img src="assets/demo.gif">
 
 # RmAnki
 
-A port of the Anki flaschards app for the ReMarkable device. 
+AnkiWeb wrapper for the ReMarkable device.
 
-## WARNING - THIS APP IS IN EARLY BETA, IT IS NOT STABLE - USE AT YOUR OWN DISCRETION
+**Limitations**
+- No image support
+- No HTML support
+- No editing support
+- No pen support
+- Not using the fastest refresh 
 
-To run you must have the `Carta` python lib on the device. You must also have an active anki instance with the ankiConnect plugin running on a reachable device (which is what it syncs)
+# How to build & run
 
-In a SSH session - `python3 main.py <config>`, where `<config>` is the file located in `/assets`. Two examples have been provided with you. 
+Based on https://developer.remarkable.com/documentation/qt_epaper (Please check this if you're on version 3.17)
 
-Currently the application is very much limited to cloze & basic questions. (BR works, but doesn't reverse the sides). Media, LaTeX, HTML and any other special formatting are not supported. Only answering the card is supported.
+1. Download toolchain for your device 
 
-My current estimate for a stable release with more features is around 2/3 weeks. Please open any issues with any questions :)
+2. Source the toolchain 
+```
+source <env_setup_file>
+```
+1. Run the build command
+```
+cmake . -B build
+cmake --build build
+```
+1. Transfer files to the reMarkable
+```
+scp build/anki root@10.11.99.1:/home/root/anki
+ssh root@10.11.99.1
+systemctl stop xochitl 
+chmod +x /home/root/anki
 
+# reMarkable 1 only set this beforehand on the reMarkable:
+export QT_QPA_EVDEV_TOUCHSCREEN_PARAMETERS="rotate=180"
+ 
+# reMarkable 2 only set this beforehand on the reMarkable:
+export QT_QPA_EVDEV_TOUCHSCREEN_PARAMETERS="rotate=180:invertx"
+
+QT_QUICK_BACKEND=epaper /home/root/anki -platform epaper
+```
+
+# Disclaimer 
+
+The original version was designed fully by my self, and this is just a port to make it easier to run. Please expect bugs! (and open an issue when you find them)
+A lot of this port was with the help of Claude, I don't feel fully comfortable writing cpp and I'm not interested in learning it.
 
