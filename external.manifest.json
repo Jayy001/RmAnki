@@ -1,0 +1,6 @@
+{
+    "name": "Anki",
+    "description": "Anki flashcard study app for reMarkable Paper Pro",
+    "application": "backend/anki.sh",
+    "qtfb": true
+}

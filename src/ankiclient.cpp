@@ -764,11 +764,35 @@ void AnkiClient::loadDecks()
 
         DeckTreeNode root = decodeDeckListInfoResponse(data);
 
+        // Before re-building, save which deck_ids were user-collapsed
+        // (only on reloads, not on the very first load).
+        if (m_decksEverLoaded) {
+            m_collapsedDeckIds.clear();
+            for (int i : m_collapsedIndices) {
+                if (i < m_decks.size())
+                    m_collapsedDeckIds.insert(m_decks[i].deck_id);
+            }
+        }
+
         // Flatten into parallel lists
         m_decks.clear();
         flattenDeckTree(root, m_decks, 0);
 
         m_collapsedIndices.clear();
+        if (!m_decksEverLoaded) {
+            // First load: default-collapse all parent decks.
+            for (int i = 0; i < m_decks.size(); ++i) {
+                if (m_decks[i].hasChildren)
+                    m_collapsedIndices.insert(i);
+            }
+            m_decksEverLoaded = true;
+        } else {
+            // Restore collapse state by deck_id.
+            for (int i = 0; i < m_decks.size(); ++i) {
+                if (m_collapsedDeckIds.contains(m_decks[i].deck_id))
+                    m_collapsedIndices.insert(i);
+            }
+        }
         rebuildDeckData();
 
         setCurrentState(QStringLiteral("DECKS"));
@@ -831,16 +855,15 @@ void AnkiClient::showNextCard()
 
     const StudyCard &card = m_study.cards.first();
 
-    m_currentFront = stripHtml(card.question);
+    // Pass raw HTML — the litehtml renderer handles display.
+    m_currentFront = card.question;
     emit currentFrontChanged();
 
-    // Anki's answer HTML typically contains front+back separated by
-    // <hr id=answer> (or <hr id="answer"> etc).  Extract just the back.
-    QString backText;
+    // Extract the "back" portion of the answer HTML: everything after
+    // the <hr id=answer> separator that Anki injects.
+    QString backHtml;
     {
-        QString answerHtml = card.answer;
-
-        // Try literal match first, then regex for quoted/spaced variants
+        const QString &answerHtml = card.answer;
         int hrIdx = answerHtml.indexOf(QLatin1String("<hr id=answer>"),
                                        0, Qt::CaseInsensitive);
         if (hrIdx < 0) {
@@ -854,26 +877,12 @@ void AnkiClient::showNextCard()
 
         if (hrIdx >= 0) {
             int tagEnd = answerHtml.indexOf(QLatin1Char('>'), hrIdx);
-            if (tagEnd >= 0)
-                backText = stripHtml(answerHtml.mid(tagEnd + 1));
-        }
-
-        // Fallback: if no separator found or result is empty,
-        // strip the front text from the beginning of the full answer.
-        if (backText.isEmpty()) {
-            QString fullBack = stripHtml(answerHtml);
-            if (fullBack.startsWith(m_currentFront)) {
-                backText = fullBack.mid(m_currentFront.length()).trimmed();
-                // Remove leading "---" left over from the <hr> conversion
-                if (backText.startsWith(QLatin1String("---")))
-                    backText = backText.mid(3).trimmed();
-            }
-            // Last resort: use the full stripped answer as-is
-            if (backText.isEmpty())
-                backText = fullBack;
+            backHtml = (tagEnd >= 0) ? answerHtml.mid(tagEnd + 1) : answerHtml;
+        } else {
+            backHtml = answerHtml;
         }
     }
-    m_currentBack = backText;
+    m_currentBack = backHtml;
     emit currentBackChanged();
 
     m_currentButtonLabels = card.button_labels;
